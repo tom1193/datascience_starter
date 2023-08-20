@@ -1,0 +1,21 @@
+# exact version
+scikit-learn==1.0.0
+
+# version inequality
+sphinx>=3.2.1
+
+# whatever is in your version of pip. For most up to date use pip install --upgrade pip
+einops
+
+# pytorch 
+--find-links https://download.pytorch.org/whl/cu117/torch_stable.html; sys_platform == "linux"
+torch==2.0.1+cu117; sys_platform == "linux"
+
+# package dir where pyproject.toml or setup.py resides
+/home/local/package
+
+# editable installation of local packages
+-e /home/local/package
+
+# from github
+resize @ git+https://github.com/shuohan/resize.git
