@@ -8,15 +8,17 @@ from functools import cached_property
 import pystarter.definitions as D
 from pystarter.utils import read_tabular
 
-class Cohort():
+class CachedCohort():
     def __init__(
         self,
         fpath: dict,
         fargs: dict,
         cache: str=None,
+        scan_cache: str=None,
         img_dir: str=None,
     ):
         self.cache = cache
+        self.scan_cache = scan_cache
         self.imgs = img_dir
         self.data = {}
         if isinstance(fpath, str):
@@ -43,18 +45,25 @@ class Cohort():
     
     @cached_property
     def scan_df(self):
-        """assumes file structure of [img_dir]/[subject id]/[file.dcm]"""
+        """assumes file structure of [img_dir]/[subject id]/[session date]/[file.dcm]"""
+        if self.scan_cache is None:
+            scanlist = []
+            for id in os.scandir(self.img_dir):
+                for session in os.scandir(id):
+                    for scan in os.scandir(session):
+                        self._scanlist.append([id.name, session.name, f.path])
+            
+            return pd.DataFrame(scanlist, columns=['id', 'scandate', 'fpath'])
+        else:
+            return read_tabular(self.scan_cache)
 
-        scanlist = []
-        for id in os.scandir(self.img_dir):
-            for f in os.scandir(id):
-                self._scanlist.append([id.name, f.path])
-        
-        return pd.DataFrame(scanlist, columns=['id', 'fpath'])
 
-
-class NLSTCohort(Cohort):
-    def __init__(self, fpath: dict, fargs: dict, **kwargs):
+class NLSTCohort(CachedCohort):
+    def __init__(
+            self, 
+            fpath={'main': 'raw_nlst.csv'}, 
+            fargs={'dtype': {'patient_id': str}}, 
+            **kwargs):
         super().__init__(fpath, fargs, **kwargs)
 
         # preprocess
@@ -69,8 +78,30 @@ class NLSTCohort(Cohort):
         delta = relativedelta(obs_date, birthday)
         return int(delta.years)
 
-class NLST
 
+class NLST_CohortWrapper():
+    def __init__(
+        self,
+        init_cache=lambda: NLSTCohort(
+            cache=os.path.join(D.DATA, "nlst.csv"),
+            scan_cache=os.path.join(D.DATA, "nlst_scan.csv"),
+        ),
+        test="/home/local/nlst_test.csv",
+    ):
+        self.init_cache = init_cache
+        self.test = read_tabular(test)
+
+    @cached_property
+    def cohort(self):
+        return self.init_cache()
+
+    @cached_property
+    def train_set(self):
+        df = self.cohort.df
+        return df[~df['id'].isin(self.test['id'])]
+    
+    def train_oldage(self):
+        return self.train_set[self.train_set['age']>75]
 
 
 if __name__ == "__main__":
