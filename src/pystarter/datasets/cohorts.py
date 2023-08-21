@@ -39,16 +39,7 @@ class CachedCohort():
         self.transforms = OrderedDict()
 
         # preprocess logic
-        self.transforms["id"] = lambda: self.data["main"]["patient_id"]
-        self.transforms["name"] = lambda: self.data["main"]["last_name"] + "," + self.data["main"]["first_name"]
-        self.transforms["age"] = lambda: self.data["main"].apply(lambda x: self.age(x))
-
-    def age(self, x):
-        # x is a single row
-        birthday = pd.to_datetime(x["birthday"])
-        obs_date = pd.to_datetime(x["trial_start"]) + pd.to_timedelta(x["fup_days"], unit='D')
-        delta = relativedelta(obs_date, birthday)
-        return int(delta.years)
+        
 
     @property
     def df(self):
@@ -83,7 +74,16 @@ class NLSTCohort(CachedCohort):
             **kwargs):
         super().__init__(fpath, fargs, **kwargs)
 
+        self.transforms["id"] = lambda: self.data["main"]["patient_id"]
+        self.transforms["name"] = lambda: self.data["main"]["last_name"] + "," + self.data["main"]["first_name"]
+        self.transforms["age"] = lambda: self.data["main"].apply(lambda x: self.age(x))
 
+    def age(self, x):
+        # x is a single row
+        birthday = pd.to_datetime(x["birthday"])
+        obs_date = pd.to_datetime(x["trial_start"]) + pd.to_timedelta(x["fup_days"], unit='D')
+        delta = relativedelta(obs_date, birthday)
+        return int(delta.years)
 
 
 class NLST_CohortWrapper():
