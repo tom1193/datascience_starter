@@ -70,13 +70,12 @@ class ScanDataset(PandasDataset):
         self.seqlen = seqlen
         self.img_dir = img_dir
     
-
     def __getitem__(self, index) -> Item:
         id = self.ids[index]
         id_rows = self.cohort[self.cohort['id']==id].sort_values(by='scandate', ascending=False)
         id_rows = id_rows.iloc[:self.seqlen]
 
         # return stuff
-    
+
     def __len__(self) -> int:
         return len(self.ids)
