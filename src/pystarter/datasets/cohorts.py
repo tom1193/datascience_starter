@@ -1,3 +1,8 @@
+# import ..utils
+# import sys
+# sys.path.append("/home/local/other_project")
+# import pystarter.models.encoders
+
 import os, pandas as pd
 from dataclasses import dataclass
 from typing import TypedDict, OrderedDict
@@ -17,6 +22,10 @@ class CachedCohort():
         scan_cache: str=None,
         img_dir: str=None,
     ):
+        """
+        fpath: dict - file path of raw data
+        fargs: dict - keyword args to pass to pd.read_csv and pd.read_excel
+        """
         self.cache = cache
         self.scan_cache = scan_cache
         self.imgs = img_dir
@@ -30,13 +39,21 @@ class CachedCohort():
         self.transforms = OrderedDict()
 
         # preprocess logic
+        self.transforms["id"] = lambda: self.data["main"]["patient_id"]
+        self.transforms["name"] = lambda: self.data["main"]["last_name"] + "," + self.data["main"]["first_name"]
+        self.transforms["age"] = lambda: self.data["main"].apply(lambda x: self.age(x))
+
+    def age(self, x):
+        # x is a single row
+        birthday = pd.to_datetime(x["birthday"])
+        obs_date = pd.to_datetime(x["trial_start"]) + pd.to_timedelta(x["fup_days"], unit='D')
+        delta = relativedelta(obs_date, birthday)
+        return int(delta.years)
 
     @property
     def df(self):
-        if self._df is None: # lazy property, only computes the first time its called
-            # load dataframe from cache
+        if self._df is None: 
             if self.cache is None:
-                # preprocess cohort
                 for key, func in self.transforms.items():
                     self._df[key] = func()
             else:
@@ -66,17 +83,7 @@ class NLSTCohort(CachedCohort):
             **kwargs):
         super().__init__(fpath, fargs, **kwargs)
 
-        # preprocess
-        self.transforms["id"] = lambda: self.data["main"]["patient_id"]
-        self.transforms["name"] = lambda: self.data["main"]["last_name"] + "," + self.data["main"]["first_name"]
-        self.transforms["age"] = lambda: self.data["main"].apply(lambda x: self.age(x))
 
-    def age(self, x):
-        # x is a single row
-        birthday = pd.to_datetime(x["birthday"])
-        obs_date = pd.to_datetime(x["trial_start"]) + pd.to_timedelta(x["fup_days"], unit='D')
-        delta = relativedelta(obs_date, birthday)
-        return int(delta.years)
 
 
 class NLST_CohortWrapper():
@@ -99,6 +106,7 @@ class NLST_CohortWrapper():
     def train_set(self):
         df = self.cohort.df
         return df[~df['id'].isin(self.test['id'])]
+    
     
     def train_oldage(self):
         return self.train_set[self.train_set['age']>75]

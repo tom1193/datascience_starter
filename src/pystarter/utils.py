@@ -21,6 +21,6 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 def load_config(configf):
-    with open(os.path.join(D.CONFIG_DIR, configf), 'r') as f:
+    with open(os.path.join(D.CONFIGS, configf), 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     return config

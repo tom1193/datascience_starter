@@ -1,0 +1,11 @@
+
+# model
+model_class: 'mlp'
+hidden_features: 256
+num_classes: 2
+
+# optimization
+lr: !!float 1e-4
+epochs: 1000
+batch_size: 100
+val_interval: 5

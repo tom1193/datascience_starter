@@ -7,7 +7,8 @@ class MLP(nn.Module):
         self.act = nn.ReLU()
         self.fc2 = nn.Linear(hidden_features, out_features)
 
-    def forward(self, x):
+    def forward(self, x1, x2):
+        x = torch.cat([x1, x2], dim=1)
         x = self.fc1(x)
         x = self.act(x)
         x = self.fc2(x)
