@@ -1,3 +1,4 @@
+# do NOT use from package import *
 # import ..utils
 # import sys
 # sys.path.append("/home/local/other_project")
